@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="accessibility_description">Lets an authorized local MCP client read accessibility screen elements, take screenshots, and perform taps, swipes, and text input on this Android device. Only enable for clients you trust.</string>
+</resources>

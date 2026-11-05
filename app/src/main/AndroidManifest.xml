@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Required to locate/launch installed apps in the sideloaded build. -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <application android:allowBackup="false"
+                 android:label="Mobile MCP On Device"
+                 android:theme="@android:style/Theme.Material.NoActionBar"
+                 android:usesCleartextTraffic="false">
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <service android:name=".ControlService"
+                 android:label="Mobile MCP device controller"
+                 android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+                 android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data android:name="android.accessibilityservice"
+                       android:resource="@xml/accessibility_service" />
+        </service>
+    </application>
+</manifest>
