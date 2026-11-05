@@ -6,7 +6,7 @@
     <application android:allowBackup="false"
                  android:label="Mobile MCP On Device"
                  android:theme="@android:style/Theme.Material.NoActionBar"
-                 android:usesCleartextTraffic="false">
+                 android:usesCleartextTraffic="true">
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
