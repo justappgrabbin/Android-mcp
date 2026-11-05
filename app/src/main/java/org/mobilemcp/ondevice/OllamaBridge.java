@@ -52,7 +52,7 @@ final class OllamaBridge {
     }
     void clear() {
         worker.execute(() -> {
-            history.removeAll();
+            while (history.length() > 0) history.remove(history.length() - 1);
             requestedTools = new JSONArray();
             nextTool = 0;
             turnsWithTools = 0;
@@ -97,7 +97,7 @@ final class OllamaBridge {
                     throw new IllegalStateException("Enable Accessibility and start the MCP server first.");
                 if (!endpoint.equals(root) || !selectedModel.equals(model)) {
                     root = endpoint; model = selectedModel;
-                    history.removeAll();
+                    while (history.length() > 0) history.remove(history.length() - 1);
                 }
                 report("Discovering the phone's MCP tools…", false, true);
                 discover();
