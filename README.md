@@ -1,6 +1,6 @@
 # Mobile MCP On Device — Android-native experimental port
 
-**Status: Android project source prepared; APK not compiled or tested on a phone in this environment.**
+**Status: native Android debug APK builds with GitHub Actions. Real-device verification is still required.**
 
 Independent Android-native implementation of a subset of the public [mobile-next/mobile-mcp](https://github.com/mobile-next/mobile-mcp) tool interface. It does **not** package the upstream Node.js server and does **not** implement every upstream command. Upstream project is Apache-2.0; this Android implementation is separately authored; see `NOTICE.md`.
 
@@ -63,11 +63,45 @@ Then try `tools/list` and `tools/call` with `{"name":"mobile_get_screen_size","a
 - INTERNET permission permits the local listening socket. Server binds strictly to `127.0.0.1:8765`, not `0.0.0.0`.
 - `QUERY_ALL_PACKAGES` allows installed-app discovery. This is intended for sideloading; Play Store policies might disallow it.
 - Bearer token generated using SecureRandom; required on every `/mcp` POST. Rotate token from app; server stops until restarted.
-- No telemetry, advertising, remote model call, or external API key. Tool replies are sent only to authenticated MCP clients.
+- No telemetry, advertising, or mandatory cloud API key. The optional Ollama client deliberately sends prompts and approved tool results to the Ollama server URL you configure; do not point it at an untrusted host.
 - Do not expose port 8765 to untrusted networks. Do not paste your token into public logs or issue reports.
 - Accessibility UI content may contain personal information; MCP agents with a token can read it.
 - Android background process restrictions may stop the service or server. This is not a guaranteed always-on daemon.
 
 ## Validation status
 
-Source XML and package structure can be validated offline. A build and actual Accessibility/Android device testing have not been performed in the current environment (Android SDK, Gradle, and internet access are unavailable here). This package is **not** a verified release APK. Build may need fixes from Android Studio's compiler, and specific gestures/OS versions require phone testing.
+The native Android MCP server was compiled as a GitHub Actions debug APK. The Ollama client addition is built by the same workflow. No physical-device Accessibility, chat, and tool-execution test has been performed. This is **not** a production-verified release APK.
+
+## Local Ollama client (native Android bridge)
+
+In addition to acting as an MCP server, the APK now includes a minimal native
+Ollama MCP **client** inspired by [jonigl/mcp-client-for-ollama](https://github.com/jonigl/mcp-client-for-ollama).
+It does not bundle Python or the original terminal program.
+
+1. Start the app's Accessibility MCP server in the top section.
+2. Run an Ollama server and download an Ollama **tool-calling capable** model.
+   - If Ollama itself runs on the Android phone: `http://127.0.0.1:11434`
+   - If Ollama runs on a tablet/computer you control, use its **LAN IP** such as
+     `http://192.168.1.5:11434`. The Ollama server must listen on a reachable
+     interface and the devices must be on a trusted network.
+3. In **Local model ↔ MCP tools**, enter the server URL and the exact installed
+   Ollama model name. Use **Check Ollama connection** to verify.
+4. Enter a question and press **Ask model with MCP tools**.
+5. When the model requests any device tool, review the exact tool name and JSON
+   arguments and press **Approve** or **Deny**. Every tool call requires approval.
+6. Approved tool results return to the model and its next response is shown.
+
+The model uses Ollama's `/api/chat` tool-calling API and discovers the local
+Android `/mcp` tools using the MCP `initialize` and `tools/list` methods.
+Tool messages are sent using `role: "tool"`. The loop is capped at eight model
+rounds per prompt. Conversations are held in memory while the Activity exists:
+there is **not yet** persistent session memory or context-mode indexing.
+
+**Network and privacy:** Android's cleartext policy was loosened to let the
+owner connect to a self-hosted Ollama server over private LAN HTTP. HTTP traffic
+to a LAN model is unencrypted. The server itself remains bound to loopback and
+protected by a token. Do not expose an Ollama server to the public internet.
+Model results are not guaranteed and action success needs phone testing.
+
+See [the full nine-repository integration inventory](docs/INTEGRATIONS.md)
+for which systems are implemented, referenced, or require a separate runtime.
