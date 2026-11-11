@@ -1,6 +1,5 @@
 package org.mobilemcp.ondevice;
 
-import android.util.Base64;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.BufferedInputStream;
@@ -179,6 +178,17 @@ final class LocalMcpServer implements AutoCloseable {
     }
     private static JSONArray toolList() throws Exception {
         JSONArray a=new JSONArray();
+        add(a,"mobile_get_capabilities","Check device-control capabilities, workspace selection and platform limits",deviceOnly(),true);
+        add(a,"mobile_create_directory","Create a directory inside the selected workspace; parent must exist",
+                deviceAnd("path","string","Relative directory path"),false);
+        add(a,"mobile_delete_file","Delete one file in the selected workspace; cannot delete directories; requires confirm=true",
+                schema(new String[]{"device","path","confirm"},new String[]{"string","string","boolean"},new String[]{"local-android","Relative file path","Must be true to delete"},"device","path","confirm"),false);
+        add(a,"mobile_list_files","List files in the owner-selected workspace folder (up to 500 entries)",
+                schema(new String[]{"device","path"},new String[]{"string","string"},new String[]{"local-android","Relative folder path; empty for workspace root"},"device"),true);
+        add(a,"mobile_read_file","Read a UTF-8 text file in the selected workspace (256 KiB maximum)",
+                schema(new String[]{"device","path"},new String[]{"string","string"},new String[]{"local-android","Relative file path"},"device","path"),true);
+        add(a,"mobile_write_file","Create a UTF-8 text file in the selected workspace; replacing an existing file requires overwrite=true (256 KiB maximum)",
+                schema(new String[]{"device","path","text","overwrite"},new String[]{"string","string","string","boolean"},new String[]{"local-android","Relative file path; parent folders must exist","UTF-8 contents","Explicitly replace an existing file; default false"},"device","path","text"),false);
         add(a,"mobile_list_sensors","Discover available Android hardware sensors",deviceOnly(),true);
         add(a,"mobile_read_sensor","Read one current sample from Android hardware sensor type",
                 schema(new String[]{"device","type"},new String[]{"string","integer"},new String[]{"local-android","Android Sensor.TYPE_* integer from mobile_list_sensors"},"device","type"),true);
@@ -199,9 +209,9 @@ final class LocalMcpServer implements AutoCloseable {
         add(a,"mobile_swipe_on_screen","Swipe up, down, left or right",
                 schema(new String[]{"device","direction","x","y","duration"},new String[]{"string","string","number","number","number"},new String[]{"local-android","up/down/left/right","Start x (optional with y)","Start y (optional with x)","Milliseconds"},"device","direction"),false);
         add(a,"mobile_type_keys","Set text in the focused editable field",
-                schema(new String[]{"device","text","submit"},new String[]{"string","string","boolean"},new String[]{"local-android","Text to enter","Submit after typing (depends on app)"},"device","text"),false);
-        add(a,"mobile_press_button","Android BACK, HOME, APP_SWITCH, NOTIFICATIONS",
-                deviceAnd("button","string","BACK/HOME/APP_SWITCH/NOTIFICATIONS"),false);
+                schema(new String[]{"device","text","submit","ref"},new String[]{"string","string","boolean","string"},new String[]{"local-android","Text to enter","Submit after typing (depends on app)","Optional editable element ref to focus before typing"},"device","text"),false);
+        add(a,"mobile_press_button","Android navigation, notifications, quick settings, or power dialog",
+                deviceAnd("button","string","BACK/HOME/APP_SWITCH/NOTIFICATIONS/QUICK_SETTINGS/POWER_DIALOG"),false);
         add(a,"mobile_open_url","Open a safe web URL on the device",deviceAnd("url","string","http:// or https:// URL"),false);
         add(a,"mobile_take_screenshot","Capture device screen (Android 11+); returns inline image",
                 schema(new String[]{"device","maxSize"},new String[]{"string","number"},new String[]{"local-android","Maximum image edge, 200-1600 pixels"},"device"),true);

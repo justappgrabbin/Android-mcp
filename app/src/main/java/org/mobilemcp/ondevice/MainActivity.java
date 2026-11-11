@@ -47,6 +47,16 @@ public final class MainActivity extends Activity {
         layout.addView(status);
         button(layout, "1. Enable Accessibility Service", v ->
                 startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
+        button(layout, "Choose read/write workspace folder", v -> {
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+            startActivityForResult(intent, 41);
+        });
+        button(layout, "Disconnect workspace folder", v -> {
+            WorkspaceTools.forget(this);
+            refresh();
+        });
         button(layout, "2. Start local MCP server", v -> {
             ControlService svc = ControlService.active();
             if (svc == null) {
@@ -167,8 +177,25 @@ public final class MainActivity extends Activity {
     private void refresh() {
         ControlService svc = ControlService.active();
         status.setText("Accessibility: " + (svc == null ? "disabled" : "enabled") +
-                "\nLocal MCP: " + (svc != null && svc.isServerRunning() ? "RUNNING" : "stopped"));
+                "\nLocal MCP: " + (svc != null && svc.isServerRunning() ? "RUNNING" : "stopped") +
+                "\nWorkspace read/write: " + (WorkspaceTools.selected(this) == null ? "choose a folder" : "enabled for selected folder"));
         if (settings != null) settings.setText(clientConfig());
+    }
+    @Override protected void onActivityResult(int request, int result, Intent data) {
+        super.onActivityResult(request, result, data);
+        if (request != 41 || result != RESULT_OK || data == null || data.getData() == null) return;
+        int flags = data.getFlags() & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+        if (flags != (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION)) {
+            status.setText("The folder provider must grant both read and write access. Choose another folder.");
+            return;
+        }
+        try {
+            getContentResolver().takePersistableUriPermission(data.getData(), flags);
+            WorkspaceTools.select(this, data.getData());
+            refresh();
+        } catch (SecurityException e) {
+            status.setText("Could not retain folder access. Choose a folder that supports persistent read/write permissions.");
+        }
     }
     @Override protected void onResume() {
         super.onResume();

@@ -21,7 +21,6 @@ import android.util.DisplayMetrics;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
@@ -143,6 +142,20 @@ public final class ControlService extends AccessibilityService {
     JSONObject execute(String name,JSONObject args) throws Exception {
         if (!name.equals("mobile_list_available_devices")) checkDevice(args);
         switch (name) {
+            case "mobile_get_capabilities": return new JSONObject()
+                    .put("device", "local-android")
+                    .put("accessibilityEnabled", true)
+                    .put("gestures", (getServiceInfo().getCapabilities() &
+                            android.accessibilityservice.AccessibilityServiceInfo.CAPABILITY_CAN_PERFORM_GESTURES) != 0)
+                    .put("screenshotApiAvailable", Build.VERSION.SDK_INT >= 30)
+                    .put("workspaceSelected", WorkspaceTools.selected(this) != null)
+                    .put("textFileLimitBytes", 256 * 1024)
+                    .put("limitations", "Selected folder only; provider may revoke access. No root, ADB shell, other apps' private files, or GitHub credentials. Secure screens may block screenshots.");
+            case "mobile_list_files":
+            case "mobile_create_directory":
+            case "mobile_delete_file":
+            case "mobile_read_file":
+            case "mobile_write_file": return WorkspaceTools.execute(this, name, args);
             case "mobile_list_sensors": return SensorTools.list(this);
             case "mobile_read_sensor": return SensorTools.read(this,args);
             case "mobile_list_available_devices": return new JSONObject().put("devices",new JSONArray().put(deviceInfo()));
@@ -205,20 +218,28 @@ public final class ControlService extends AccessibilityService {
             });
             case "mobile_type_keys": return onUi(() -> {
                 AccessibilityNodeInfo root=getRootInActiveWindow();
+                if (args.has("ref")) {
+                    Rect bounds = lastRefs.get(args.getString("ref"));
+                    if (bounds == null) throw new IllegalArgumentException("Unknown ref; list elements again");
+                    AccessibilityNodeInfo target = findEditable(root, bounds, 0);
+                    if (target == null || !target.performAction(AccessibilityNodeInfo.ACTION_FOCUS))
+                        throw new IllegalStateException("Ref is not a focusable editable field");
+                }
                 AccessibilityNodeInfo focused=root==null?null:root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT);
                 if (focused==null || !focused.isEditable()) throw new IllegalStateException("No focused editable text field");
                 Bundle bundle=new Bundle(); bundle.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, args.getString("text"));
                 if (!focused.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT,bundle)) throw new IllegalStateException("Text input rejected by app");
                 if(args.optBoolean("submit",false)) {
                     if (Build.VERSION.SDK_INT < 30) throw new IllegalArgumentException("submit requires Android 11+ in this port");
-                    focused.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.getId());
+                    if (!focused.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.getId()))
+                        throw new IllegalStateException("Text was set but the app rejected submit");
                 }
                 return new JSONObject().put("message","Text set in focused field");
             });
             case "mobile_press_button": return onUi(() -> {
                 String button=args.getString("button").toUpperCase(java.util.Locale.ROOT);
                 int action;
-                switch(button) { case "BACK":action=GLOBAL_ACTION_BACK;break;case "HOME":action=GLOBAL_ACTION_HOME;break;case "APP_SWITCH":action=GLOBAL_ACTION_RECENTS;break;case "NOTIFICATIONS":action=GLOBAL_ACTION_NOTIFICATIONS;break;default:throw new IllegalArgumentException("Native port supports BACK, HOME, APP_SWITCH, NOTIFICATIONS only"); }
+                switch(button) { case "BACK":action=GLOBAL_ACTION_BACK;break;case "HOME":action=GLOBAL_ACTION_HOME;break;case "APP_SWITCH":action=GLOBAL_ACTION_RECENTS;break;case "NOTIFICATIONS":action=GLOBAL_ACTION_NOTIFICATIONS;break;case "QUICK_SETTINGS":action=GLOBAL_ACTION_QUICK_SETTINGS;break;case "POWER_DIALOG":action=GLOBAL_ACTION_POWER_DIALOG;break;default:throw new IllegalArgumentException("Supported: BACK, HOME, APP_SWITCH, NOTIFICATIONS, QUICK_SETTINGS, POWER_DIALOG"); }
                 if(!performGlobalAction(action)) throw new IllegalStateException("Global action rejected");
                 return new JSONObject().put("message","Button pressed: "+button);
             });
@@ -249,5 +270,16 @@ public final class ControlService extends AccessibilityService {
             case "mobile_take_screenshot": return screenshot(args);
             default: throw new IllegalArgumentException("Tool not supported by this on-device port: "+name);
         }
+    }
+    private AccessibilityNodeInfo findEditable(AccessibilityNodeInfo node, Rect bounds, int depth) {
+        if (node == null || depth > 20) return null;
+        Rect actual = new Rect();
+        node.getBoundsInScreen(actual);
+        if (node.isEditable() && actual.equals(bounds)) return node;
+        for (int i = 0; i < node.getChildCount(); i++) {
+            AccessibilityNodeInfo found = findEditable(node.getChild(i), bounds, depth + 1);
+            if (found != null) return found;
+        }
+        return null;
     }
 }

@@ -37,6 +37,13 @@ Then try `tools/list` and `tools/call` with `{"name":"mobile_get_screen_size","a
 
 ## Implemented tools
 
+- `mobile_get_capabilities` reports platform limits and whether a workspace was selected.
+- `mobile_list_files`, `mobile_read_file`, `mobile_write_file`
+- `mobile_create_directory`, `mobile_delete_file` (files only; explicit confirmation argument)
+- File tools require **Choose read/write workspace folder** in the app. Android's
+  system picker grants access to that folder; no all-files permission is needed.
+  Text files are limited to 256 KiB; overwriting requires `overwrite=true`.
+- `mobile_list_sensors`, `mobile_read_sensor`
 - `mobile_list_available_devices`
 - `mobile_get_screen_size`, `mobile_get_orientation`, `mobile_get_foreground_app`
 - `mobile_list_elements_on_screen` (text/json, not `raw`)
@@ -44,7 +51,7 @@ Then try `tools/list` and `tools/call` with `{"name":"mobile_get_screen_size","a
 - `mobile_double_tap_on_screen`, `mobile_long_press_on_screen_at_coordinates`
 - `mobile_swipe_on_screen`
 - `mobile_type_keys` (Accessibility ACTION_SET_TEXT, may replace entire current field; not equivalent to injected key events)
-- `mobile_press_button` (BACK, HOME, APP_SWITCH, NOTIFICATIONS only)
+- `mobile_press_button` (BACK, HOME, APP_SWITCH, NOTIFICATIONS, QUICK_SETTINGS, POWER_DIALOG)
 - `mobile_open_url` (http/https)
 - `mobile_list_apps`, `mobile_launch_app`
 - `mobile_take_screenshot` (Android API 30+, screenshots may be blocked for secure windows)
@@ -59,6 +66,10 @@ Then try `tools/list` and `tools/call` with `{"name":"mobile_get_screen_size","a
 
 ## Permissions and security
 
+- File permissions must be granted on the phone through the folder picker.
+  **Disconnect workspace folder** disables all MCP file access immediately.
+- For OpenHands setup and GitHub push approval boundaries, see
+  [OpenHands connection guide](docs/OPENHANDS.md) and the included Python stdio bridge.
 - ACCESSIBILITY is **high-privilege**: it can observe app content and control the phone. Explicitly enabled by the phone owner; service is inert until started from the app.
 - INTERNET permission permits the local listening socket. Server binds strictly to `127.0.0.1:8765`, not `0.0.0.0`.
 - `QUERY_ALL_PACKAGES` allows installed-app discovery. This is intended for sideloading; Play Store policies might disallow it.
@@ -71,6 +82,11 @@ Then try `tools/list` and `tools/call` with `{"name":"mobile_get_screen_size","a
 ## Validation status
 
 The native Android MCP server was compiled as a GitHub Actions debug APK. The Ollama client addition is built by the same workflow. No physical-device Accessibility, chat, and tool-execution test has been performed. This is **not** a production-verified release APK.
+
+The workspace tools and text targeting updates have passed Java 17 source
+compilation against Android 15 API classes. The stdio bridge has host-side
+tests; the OpenHands UI connection and Android document-provider operations
+still require testing on your phone and your OpenHands installation.
 
 ## Local Ollama client (native Android bridge)
 

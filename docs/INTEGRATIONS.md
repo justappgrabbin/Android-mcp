@@ -45,7 +45,19 @@ Tool result returns to Ollama; model continues
 * Screenshot results can be forwarded to a vision-capable model after explicit approval. They may contain private content.
 * The Android client does not reproduce all the features of `ollmcp`, which is a Python program.
 
-## Compatibility warning
+## OpenHands and sandboxd
+
+The app now includes a Python stdio-to-HTTP bridge for an external OpenHands
+MCP client. See [setup and permission boundaries](OPENHANDS.md). It is a protocol
+integration, not an embedded OpenHands runtime, and needs live connection testing.
+
+The supplied `sandboxd-main.zip` is a separate Linux/Docker coding-agent service.
+Its runbook describes workspace list/read/write APIs, command execution, and
+agent task endpoints. It can host coding work on a server, but it does not grant
+Android permissions or provide an OpenHands integration by itself. No sandboxd
+service, credentials, or API endpoint has been configured in this app.
+
+## Runtime boundaries
 
 Do **not** merge all nine projects into a single APK or add their Python/Node
 dependencies blindly. They have materially different roles and runtime needs.
