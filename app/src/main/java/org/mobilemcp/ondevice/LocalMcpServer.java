@@ -179,6 +179,9 @@ final class LocalMcpServer implements AutoCloseable {
     }
     private static JSONArray toolList() throws Exception {
         JSONArray a=new JSONArray();
+        add(a,"mobile_list_sensors","Discover available Android hardware sensors",deviceOnly(),true);
+        add(a,"mobile_read_sensor","Read one current sample from Android hardware sensor type",
+                schema(new String[]{"device","type"},new String[]{"string","integer"},new String[]{"local-android","Android Sensor.TYPE_* integer from mobile_list_sensors"},"device","type"),true);
         add(a,"mobile_list_available_devices","List the local Android device",schema(new String[]{},new String[]{},new String[]{}),true);
         add(a,"mobile_get_screen_size","Get local Android display dimensions",deviceOnly(),true);
         add(a,"mobile_get_orientation","Get portrait or landscape",deviceOnly(),true);
