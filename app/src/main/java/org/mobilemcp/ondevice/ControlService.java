@@ -143,6 +143,8 @@ public final class ControlService extends AccessibilityService {
     JSONObject execute(String name,JSONObject args) throws Exception {
         if (!name.equals("mobile_list_available_devices")) checkDevice(args);
         switch (name) {
+            case "mobile_list_sensors": return SensorTools.list(this);
+            case "mobile_read_sensor": return SensorTools.read(this,args);
             case "mobile_list_available_devices": return new JSONObject().put("devices",new JSONArray().put(deviceInfo()));
             case "mobile_get_screen_size": {
                 JSONObject d = dimensions();
