@@ -1,3 +1,11 @@
+# Integration inventory and history
+
+The current APK is an MCP tool server only. Its previous Ollama chat client
+and model setup screen were removed in version 0.2.1. All 23 MCP tools remain
+available to external clients. The Ollama workflow below describes an earlier
+version and is retained as integration history; it is not bundled now.
+See [current setup](../README.md) and [OpenHands setup](OPENHANDS.md).
+
 # Android MCP: supplied integration targets
 
 These nine public repositories serve different roles. **Listed here does not mean

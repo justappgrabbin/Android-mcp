@@ -16,6 +16,11 @@ GitHub Actions: put all project files into a repository, open the **Actions** ta
 
 ## Phone setup
 
+The main screen starts the MCP server built into the APK. Connect your existing
+model app or agent to this server; this APK does not run a model or require
+Ollama. Connection details and the bearer token are available under
+**Connection settings and secret**.
+
 1. Install the built APK by sideloading.
 2. Launch **Mobile MCP On Device** and tap **Enable Accessibility Service**. In Android settings, enable **Mobile MCP device controller** after reviewing the security warning.
 3. Return to the app and tap **Start local MCP server**.
@@ -74,7 +79,7 @@ Then try `tools/list` and `tools/call` with `{"name":"mobile_get_screen_size","a
 - INTERNET permission permits the local listening socket. Server binds strictly to `127.0.0.1:8765`, not `0.0.0.0`.
 - `QUERY_ALL_PACKAGES` allows installed-app discovery. This is intended for sideloading; Play Store policies might disallow it.
 - Bearer token generated using SecureRandom; required on every `/mcp` POST. Rotate token from app; server stops until restarted.
-- No telemetry, advertising, or mandatory cloud API key. The optional Ollama client deliberately sends prompts and approved tool results to the Ollama server URL you configure; do not point it at an untrusted host.
+- No telemetry, advertising, or mandatory cloud API key. Connected MCP clients decide where to send tool results; use a trusted client.
 - Do not expose port 8765 to untrusted networks. Do not paste your token into public logs or issue reports.
 - Accessibility UI content may contain personal information; MCP agents with a token can read it.
 - Android background process restrictions may stop the service or server. This is not a guaranteed always-on daemon.
@@ -88,36 +93,15 @@ compilation against Android 15 API classes. The stdio bridge has host-side
 tests; the OpenHands UI connection and Android document-provider operations
 still require testing on your phone and your OpenHands installation.
 
-## Local Ollama client (native Android bridge)
+## External model apps and agents
 
-In addition to acting as an MCP server, the APK now includes a minimal native
-Ollama MCP **client** inspired by [jonigl/mcp-client-for-ollama](https://github.com/jonigl/mcp-client-for-ollama).
-It does not bundle Python or the original terminal program.
+Use the app as an MCP tool server for models running in another app. Start the
+server, open **Connection settings and secret**, and copy the endpoint and
+bearer token into a client supporting Streamable HTTP MCP with JSON responses.
+On the same phone, the endpoint is `http://127.0.0.1:8765/mcp`. Client support
+must be checked in the model app; this APK does not automatically configure it.
 
-1. Start the app's Accessibility MCP server in the top section.
-2. Run an Ollama server and download an Ollama **tool-calling capable** model.
-   - If Ollama itself runs on the Android phone: `http://127.0.0.1:11434`
-   - If Ollama runs on a tablet/computer you control, use its **LAN IP** such as
-     `http://192.168.1.5:11434`. The Ollama server must listen on a reachable
-     interface and the devices must be on a trusted network.
-3. In **Local model ↔ MCP tools**, enter the server URL and the exact installed
-   Ollama model name. Use **Check Ollama connection** to verify.
-4. Enter a question and press **Ask model with MCP tools**.
-5. When the model requests any device tool, review the exact tool name and JSON
-   arguments and press **Approve** or **Deny**. Every tool call requires approval.
-6. Approved tool results return to the model and its next response is shown.
-
-The model uses Ollama's `/api/chat` tool-calling API and discovers the local
-Android `/mcp` tools using the MCP `initialize` and `tools/list` methods.
-Tool messages are sent using `role: "tool"`. The loop is capped at eight model
-rounds per prompt. Conversations are held in memory while the Activity exists:
-there is **not yet** persistent session memory or context-mode indexing.
-
-**Network and privacy:** Android's cleartext policy was loosened to let the
-owner connect to a self-hosted Ollama server over private LAN HTTP. HTTP traffic
-to a LAN model is unencrypted. The server itself remains bound to loopback and
-protected by a token. Do not expose an Ollama server to the public internet.
-Model results are not guaranteed and action success needs phone testing.
-
-See [the full nine-repository integration inventory](docs/INTEGRATIONS.md)
-for which systems are implemented, referenced, or require a separate runtime.
+The previous optional Ollama chat screen has been removed. The standalone
+OpenHands stdio bridge remains available for computer-based agents; see
+[OpenHands setup](docs/OPENHANDS.md). All 23 MCP tools, including the new
+workspace file tools, remain available to authenticated clients.

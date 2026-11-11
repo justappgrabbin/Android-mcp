@@ -42,8 +42,7 @@ review. A prompt instruction alone does not enforce a push-only approval gate
 when an agent has unrestricted terminal access and write credentials.
 
 This bridge grants callers holding the token access to all advertised phone
-tools. The Android Ollama client's per-call approval dialogs do not apply to
-external MCP clients. Configure approvals in OpenHands for phone actions as
+tools. There are no model approval dialogs in this server-only APK. Configure approvals in OpenHands for phone actions as
 needed. End access by stopping the phone server or rotating its secret.
 
 ## File tool limits
